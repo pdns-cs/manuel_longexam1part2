@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tuazon_mobprog/constants.dart';
-import 'package:tuazon_mobprog/screens/detail_screen.dart';
+import 'package:manuel_advmobprog/constants.dart';
+import 'package:manuel_advmobprog/screens/detail_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 /// A single activity/notification row in the Loop minimal style.

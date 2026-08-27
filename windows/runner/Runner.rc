@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "tuazon_mobprog" "\0"
+            VALUE "FileDescription", "manuel_advmobprog" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "tuazon_mobprog" "\0"
+            VALUE "InternalName", "manuel_advmobprog" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "tuazon_mobprog.exe" "\0"
-            VALUE "ProductName", "tuazon_mobprog" "\0"
+            VALUE "OriginalFilename", "manuel_advmobprog.exe" "\0"
+            VALUE "ProductName", "manuel_advmobprog" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

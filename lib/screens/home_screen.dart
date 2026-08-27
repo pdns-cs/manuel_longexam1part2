@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:tuazon_mobprog/constants.dart';
-import 'package:tuazon_mobprog/screens/newsfeed_screen.dart';
-import 'package:tuazon_mobprog/screens/notification_screen.dart';
-import 'package:tuazon_mobprog/screens/profile_screen.dart';
-import 'package:tuazon_mobprog/services/user_service.dart';
-import 'package:tuazon_mobprog/widgets/loop_brand.dart';
+import 'package:manuel_advmobprog/constants.dart';
+import 'package:manuel_advmobprog/screens/newsfeed_screen.dart';
+import 'package:manuel_advmobprog/screens/notification_screen.dart';
+import 'package:manuel_advmobprog/screens/profile_screen.dart';
+import 'package:manuel_advmobprog/services/user_service.dart';
+import 'package:manuel_advmobprog/widgets/loop_brand.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

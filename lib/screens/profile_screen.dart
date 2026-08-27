@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:tuazon_mobprog/constants.dart';
-import 'package:tuazon_mobprog/models/post.dart';
-import 'package:tuazon_mobprog/models/user.dart';
-import 'package:tuazon_mobprog/services/post_service.dart';
-import 'package:tuazon_mobprog/services/user_service.dart';
-import 'package:tuazon_mobprog/widgets/api_post_card.dart';
-import 'package:tuazon_mobprog/widgets/loop_brand.dart';
+import 'package:manuel_advmobprog/constants.dart';
+import 'package:manuel_advmobprog/models/post.dart';
+import 'package:manuel_advmobprog/models/user.dart';
+import 'package:manuel_advmobprog/services/post_service.dart';
+import 'package:manuel_advmobprog/services/user_service.dart';
+import 'package:manuel_advmobprog/widgets/api_post_card.dart';
+import 'package:manuel_advmobprog/widgets/loop_brand.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tuazon_mobprog/constants.dart';
+import 'package:manuel_advmobprog/constants.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class DetailScreen extends StatefulWidget {

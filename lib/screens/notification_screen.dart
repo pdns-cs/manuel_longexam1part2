@@ -1,4 +1,4 @@
-import 'package:tuazon_mobprog/constants.dart';
+import 'package:manuel_advmobprog/constants.dart';
 
 import '../widgets/custom_info.dart' as notif;
 import 'package:flutter/material.dart';
@@ -74,7 +74,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
           Divider(),
           notif.CustomInformation(
-            name: 'Lance Tuazon',
+            name: 'Lance Rivera',
             description: " reacted to your post.",
             date: '1d',
             notifProfile: kGenericAvatar,

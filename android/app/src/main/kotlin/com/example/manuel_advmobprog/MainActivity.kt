@@ -1,4 +1,4 @@
-package com.example.tuazon_mobprog
+package com.example.manuel_advmobprog
 
 import io.flutter.embedding.android.FlutterActivity
 

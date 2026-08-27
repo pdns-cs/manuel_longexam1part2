@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:tuazon_mobprog/constants.dart';
-import 'package:tuazon_mobprog/services/user_database.dart';
-import 'package:tuazon_mobprog/widgets/loop_brand.dart';
+import 'package:manuel_advmobprog/constants.dart';
+import 'package:manuel_advmobprog/services/user_database.dart';
+import 'package:manuel_advmobprog/widgets/loop_brand.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
-import 'package:tuazon_mobprog/screens/detail_screen.dart';
+import 'package:manuel_advmobprog/screens/detail_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 /// Minimal Loop-style feed card. Keeps the original public API so the newsfeed

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tuazon_mobprog/widgets/custom_font.dart';
-import 'package:tuazon_mobprog/constants.dart';
+import 'package:manuel_advmobprog/widgets/custom_font.dart';
+import 'package:manuel_advmobprog/constants.dart';
 
 // ignore: must_be_immutable
 class CustomButton extends StatefulWidget {
