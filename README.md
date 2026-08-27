@@ -1,109 +1,87 @@
 # Loop — Social App (Long Exam)
 
 A Flutter social app built on a Facebook-clone base, restyled with a custom
-**"Loop"** identity (teal `#0D9488` + emerald, Material 3).
+"Loop" identity (teal + emerald, Material 3).
 
-**Backend:** [DummyJSON](https://dummyjson.com/) — a free fake REST API that
-returns pretend `users`, `posts`, and `comments`, so the app has realistic data
-with no real server.
+The backend is DummyJSON (https://dummyjson.com) — a free fake REST API that
+returns pretend users, posts, and comments, so the app has realistic data with
+no real server.
 
-**Demo login:** `emilys` / `emilyspass`
-(any user from <https://dummyjson.com/users>, password = username + `pass`).
+Demo login: `emilys` / `emilyspass` (any user from https://dummyjson.com/users,
+password = username + "pass").
+
 
 ## Run
 
-```bash
-flutter pub get
-flutter run
-```
+    flutter pub get
+    flutter run
 
-Needs internet. Android `INTERNET` permission is set in `AndroidManifest.xml`.
+Needs internet. The Android INTERNET permission is set in AndroidManifest.xml.
 
----
 
 ## Enhancements
 
-**1. Auth + splash**
-`POST /auth/login` verifies credentials and returns a token. The token + user
-JSON are saved to `shared_preferences`. `SplashScreen` is the launch route: if a
-token exists it goes to `/home`, otherwise `/login`.
+1. Auth + splash screen.
+   POST /auth/login checks the credentials and returns a token. The token and
+   the user are saved to shared_preferences. SplashScreen is the first screen:
+   if a token is saved it goes to Home, otherwise to Login.
 
-**2. Profile posts + Settings + Sign Out**
-`ProfileScreen` uses the logged-in user's `id` to call `GET /posts/user/{id}`
-and shows only that user's posts. `SettingsScreen` keeps preferences (dark mode,
-notifications, autoplay) in `shared_preferences` and has a **Sign Out** button
-that clears the session and returns to `/login`.
+2. Profile posts, Settings, and Sign Out.
+   ProfileScreen uses the logged-in user's id to call GET /posts/user/{id} and
+   shows only that user's posts. SettingsScreen keeps preferences (dark mode,
+   notifications, autoplay) in shared_preferences and has a Sign Out button that
+   clears the session and returns to Login.
 
-**3. Comments + likes**
-Each post loads comments from `GET /comments/post/{postId}`. New comments are
-sent with `POST /comments/add`. Like buttons toggle a local counter. Mock
-newsfeed posts keep their comment thread in memory.
+3. Comments and likes.
+   Each post loads its comments from GET /comments/post/{postId}. A new comment
+   is sent with POST /comments/add. Like buttons toggle a local counter. The
+   mock newsfeed posts keep their comments in memory.
 
----
 
-## Architecture: models → services → screens
+## How it is organized: models, services, screens
 
-One-directional pipeline. **Screens never touch `http` or `shared_preferences`
-directly** — they call a service, and a service returns a typed **model**.
+The app flows in one direction. Screens never call http or shared_preferences
+directly. A screen calls a service, and the service gives back a typed model.
 
-```
-  DummyJSON API / shared_preferences
-            │
-        ┌───────────┐   parses JSON
-        │ SERVICES  │ ────────────►  MODELS (User, Post, Comment)
-        │ UserService                    │
-        │ PostService                    │ typed objects
-        │ CommentService                 │
-        └───────────┘                    │
-            ▲                            ▼
-        ┌───────────┐   rebuild with FutureBuilder / setState
-        │  SCREENS  │
-        │ Splash · Login · Home · Profile · Settings · Newsfeed · Detail
-        └───────────┘
-```
+Models (lib/models/) are plain Dart classes that only convert JSON to and from
+Dart. They hold no logic. There are three: User, Post, and Comment.
 
-**Models** (`lib/models/`) — plain Dart classes, JSON ↔ Dart only, no logic,
-never import `http`.
+Services (lib/services/) are the only layer that does input/output — network
+calls and local storage. Each method returns a Future of a model, or throws.
 
-| Model | Key fields | From |
-|-------|-----------|------|
-| `User` | `id, username, email, firstName, lastName, image` | `/auth/login` |
-| `Post` | `id, userId, body, likes, dislikes` | `/posts/*` |
-| `Comment` | `id, body, postId, userId, username, likes` | `/comments/*` |
+  - UserService: login, isLoggedIn, getSavedUser, getToken, signOut.
+    Talks to /auth/login and shared_preferences.
+  - PostService: getPosts, getPostsByUser(id).
+    Talks to /posts and /posts/user/{id}.
+  - CommentService: getCommentsByPost(id), addComment(...).
+    Talks to /comments/post/{id} and /comments/add.
 
-**Services** (`lib/services/`) — the only layer doing I/O. Each method returns a
-`Future` of a model (or list), or throws.
+Screens (lib/screens/) are UI only. A screen holds the service it needs, calls
+it in initState or on a button press, and shows the returned model with a
+FutureBuilder or setState.
 
-| Service | Methods | Talks to |
-|---------|---------|----------|
-| `UserService` | `login`, `isLoggedIn`, `getSavedUser`, `getToken`, `signOut` | `/auth/login`, `shared_preferences` |
-| `PostService` | `getPosts`, `getPostsByUser(id)` | `/posts`, `/posts/user/{id}` |
-| `CommentService` | `getCommentsByPost(id)`, `addComment(...)` | `/comments/post/{id}`, `/comments/add` |
+Example — opening the Profile tab:
 
-**Screens** (`lib/screens/`) — UI only. Own a service instance, call it in
-`initState()` or an event handler, render the returned model.
+  1. getSavedUser() reads shared_preferences and returns a User.
+  2. getPostsByUser(user.id) calls GET /posts/user/{id} and returns a list of
+     Post objects.
+  3. A FutureBuilder shows one card per post.
+  4. Tapping Comment calls getCommentsByPost(post.id) and returns a list of
+     Comment objects.
+  5. Sending a comment calls addComment(...) and the new Comment is added to
+     the top of the list.
 
-### Example — opening the Profile tab
-1. `getSavedUser()` reads `shared_preferences` → returns a `User`.
-2. `getPostsByUser(user.id)` → `GET /posts/user/{id}` → `List<Post>`.
-3. `FutureBuilder` renders one card per post.
-4. Tapping **Comment** → `getCommentsByPost(post.id)` → `List<Comment>`.
-5. Sending a comment → `addComment(...)` → new `Comment` prepended.
+The screen only ever works with User, Post, and Comment — never raw JSON.
 
-The screen only ever works with `User` / `Post` / `Comment`, never raw JSON.
-
----
 
 ## Project layout
 
-```
-lib/
-├── constants.dart   # design tokens + API host
-├── main.dart        # MaterialApp, theme, routes
-├── models/          # User, Post, Comment
-├── services/        # UserService, PostService, CommentService
-├── providers/       # ThemeProvider
-├── screens/         # Splash, Login, Register, Home, Newsfeed,
-│                    # Profile, Settings, Detail, Notification
-└── widgets/         # PostCard, ApiPostCard, LoopLogo, custom fields
-```
+  lib/
+    constants.dart   design tokens and API host
+    main.dart        MaterialApp, theme, routes
+    models/          User, Post, Comment
+    services/        UserService, PostService, CommentService
+    providers/       ThemeProvider
+    screens/         Splash, Login, Register, Home, Newsfeed,
+                     Profile, Settings, Detail, Notification
+    widgets/         PostCard, ApiPostCard, LoopLogo, custom fields
