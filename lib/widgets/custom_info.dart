@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tuazon_mobprog/constants.dart';
 import 'package:tuazon_mobprog/screens/detail_screen.dart';
-import 'package:tuazon_mobprog/widgets/custom_font.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+/// A single activity/notification row in the Loop minimal style.
 class CustomInformation extends StatelessWidget {
   const CustomInformation({
     super.key,
@@ -31,80 +30,87 @@ class CustomInformation extends StatelessWidget {
   final String imageUrl;
   final String notifProfile;
 
+  ImageProvider? _avatar() {
+    final src = notifProfile.isNotEmpty ? notifProfile : profileImageUrl;
+    if (src.isEmpty) return null;
+    return src.startsWith('http')
+        ? CachedNetworkImageProvider(src)
+        : AssetImage(src) as ImageProvider;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(ScreenUtil().setSp(15)),
-      child: InkWell(
-        onTap: () {
-          (atProfile)
-              ? print('')
-              : Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetailScreen(
-                      userName: name,
-                      postContent: post,
-                      date: date,
-                      numOfLikes: numOfLikes,
-                      imageUrl: imageUrl,
-                      profileImageUrl: profileImageUrl,
-                    ),
+    return InkWell(
+      onTap: atProfile
+          ? null
+          : () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DetailScreen(
+                    userName: name,
+                    postContent: post,
+                    date: date,
+                    numOfLikes: numOfLikes,
+                    imageUrl: imageUrl,
+                    profileImageUrl: profileImageUrl,
                   ),
-                );
-        },
+                ),
+              ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            (notifProfile == '' && profileImageUrl == '')
-                ? icon
-                : CircleAvatar(
-                    radius: 25,
-                    backgroundImage: (notifProfile != '')
-                        ? (notifProfile.startsWith('http')
-                              ? CachedNetworkImageProvider(notifProfile)
-                              : AssetImage(notifProfile) as ImageProvider)
-                        : (profileImageUrl.startsWith('http')
-                              ? CachedNetworkImageProvider(profileImageUrl)
-                              : AssetImage(profileImageUrl) as ImageProvider),
-                  ),
-            SizedBox(width: ScreenUtil().setWidth(10)),
-
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: LOOP_SUBTLE,
+              backgroundImage: _avatar(),
+              child: _avatar() == null
+                  ? Icon(Icons.person, color: LOOP_MUTED)
+                  : null,
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   RichText(
                     text: TextSpan(
-                      style: TextStyle(
-                        fontSize: ScreenUtil().setSp(16),
-                        color: FB_DARK_PRIMARY,
-                      ),
+                      style: TextStyle(fontSize: 14, color: LOOP_TEXT),
                       children: [
                         TextSpan(
-                          text: "$name ",
-                          style: const TextStyle(fontWeight: FontWeight.w800),
+                          text: '$name ',
+                          style:
+                              const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        TextSpan(text: description),
+                        TextSpan(
+                          text: description,
+                          style: TextStyle(color: LOOP_MUTED),
+                        ),
                       ],
                     ),
                   ),
-
-                  SizedBox(height: ScreenUtil().setHeight(4)),
-
-                  CustomFont(
-                    text: date,
-                    fontSize: ScreenUtil().setSp(14),
-                    color: FB_DARK_PRIMARY,
-                    fontStyle: FontStyle.italic,
-                  ),
+                  const SizedBox(height: 4),
+                  Text(date,
+                      style: TextStyle(fontSize: 12, color: LOOP_MUTED)),
                 ],
               ),
             ),
-
-            SizedBox(width: ScreenUtil().setWidth(10)),
-
-            const Icon(Icons.more_horiz),
+            if (imageUrl.isNotEmpty) ...[
+              const SizedBox(width: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(kRadiusSm),
+                child: imageUrl.startsWith('http')
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        width: 44,
+                        height: 44,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.asset(imageUrl,
+                        width: 44, height: 44, fit: BoxFit.cover),
+              ),
+            ],
           ],
         ),
       ),

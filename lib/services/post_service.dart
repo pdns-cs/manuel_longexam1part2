@@ -20,4 +20,21 @@ class PostService {
       throw Exception('Failed to load posts: ${response.statusCode}');
     }
   }
+
+  /// GET /posts/user/{userId} — posts authored by a specific user.
+  Future<List<Post>> getPostsByUser(int userId) async {
+    final uri = Uri.parse('$host/posts/user/$userId');
+    final response = await http.get(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      final List postsJson = data['posts'] ?? [];
+      return postsJson.map((p) => Post.fromJson(p)).toList();
+    } else {
+      throw Exception('Failed to load user posts: ${response.statusCode}');
+    }
+  }
 }

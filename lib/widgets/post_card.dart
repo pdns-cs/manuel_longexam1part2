@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tuazon_mobprog/widgets/custom_inkwell_button.dart';
-import 'package:tuazon_mobprog/widgets/like_icon.dart';
-import 'package:tuazon_mobprog/widgets/share_icon.dart';
-import 'package:tuazon_mobprog/widgets/comment_icon.dart';
 import '../constants.dart';
 import 'package:tuazon_mobprog/screens/detail_screen.dart';
-import 'custom_font.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+/// Minimal Loop-style feed card. Keeps the original public API so the newsfeed
+/// (mock data) keeps working unchanged.
 class PostCard extends StatefulWidget {
   final String userName;
   final String postContent;
@@ -43,367 +40,387 @@ class _PostCardState extends State<PostCard> {
   late int _likes;
   bool _isLiked = false;
 
+  // Local, in-memory comment thread for this mock post.
+  bool _showComments = false;
+  final List<String> _comments = [];
+  final TextEditingController _commentController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _likes = int.tryParse(widget.likesCount) ?? 0;
   }
 
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  void _addComment() {
+    final text = _commentController.text.trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _comments.add(text);
+      _commentController.clear();
+    });
+  }
+
   String formatDate(DateTime d) {
-    final now = DateTime.now();
-    final diff = now.difference(d);
+    final diff = DateTime.now().difference(d);
     if (diff.inMinutes < 60) return '${diff.inMinutes}m';
     if (diff.inHours < 24) return '${diff.inHours}h';
-    const months = [
-      '',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
+    const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+      'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${months[d.month]} ${d.day}';
   }
 
+  ImageProvider _avatar() => widget.userImage.startsWith('http')
+      ? CachedNetworkImageProvider(widget.userImage)
+      : AssetImage(widget.userImage) as ImageProvider;
+
   @override
   Widget build(BuildContext context) {
-    Widget buildPostImage() {
-      // Constrain ad/market posts so the CTA row ("MORE DETAILS" + button)
-      // never gets clipped/overlaps in fixed-height containers (e.g. CarouselSlider).
-      final bool isAdsMarket = widget.adsMarket.isNotEmpty;
-      final double adsImageHeight = 160.h;
+    final bool isAd = widget.adsMarket.isNotEmpty;
 
-      if (widget.imagePath == null) {
-        if (!widget.showPlaceholder) {
-          return SizedBox(height: ScreenUtil().setHeight(1));
-        }
-
-        return Container(
-          height: isAdsMarket ? adsImageHeight : ScreenUtil().setHeight(150),
-          width: double.infinity,
-          color: Colors.grey[200],
-          child: Center(
-            child: Icon(
-              Icons.image,
-              size: ScreenUtil().setSp(40),
-              color: Colors.grey,
+    return Container(
+      margin: EdgeInsets.fromLTRB(12.w, 6.h, 12.w, 6.h),
+      decoration: BoxDecoration(
+        color: LOOP_SURFACE,
+        borderRadius: BorderRadius.circular(kRadiusMd),
+        border: Border.all(color: LOOP_BORDER),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DetailScreen(
+                userName: widget.userName,
+                postContent: widget.postContent,
+                date: formatDate(widget.date),
+                numOfLikes: _likes,
+                imageUrl: widget.imagePath ?? '',
+                profileImageUrl: widget.userImage,
+              ),
             ),
-          ),
-        );
-      }
-
-      final Widget image = widget.imagePath!.startsWith('http')
-          ? Image.network(
-              widget.imagePath!,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  width: double.infinity,
-                  height: isAdsMarket ? adsImageHeight : null,
-                  color: Colors.grey[200],
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: double.infinity,
-                  height: isAdsMarket
-                      ? adsImageHeight
-                      : ScreenUtil().setHeight(150),
-                  color: Colors.grey[200],
-                  child: Center(
-                    child: Icon(
-                      Icons.error_outline,
-                      size: ScreenUtil().setSp(40),
-                      color: Colors.grey,
-                    ),
-                  ),
-                );
-              },
-            )
-          : Image.asset(
-              widget.imagePath!,
-              fit: BoxFit.cover,
-              width: double.infinity,
-            );
-
-      if (isAdsMarket) {
-        return SizedBox(
-          width: double.infinity,
-          height: adsImageHeight,
-          child: image,
-        );
-      }
-
-      return ClipRRect(borderRadius: BorderRadius.circular(8.r), child: image);
-    }
-
-    return InkWell(
-      onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailScreen(
-              userName: widget.userName,
-              postContent: widget.postContent,
-              date: formatDate(widget.date),
-              numOfLikes: _likes,
-              imageUrl: widget.imagePath ?? '',
-              profileImageUrl: widget.userImage,
-            ),
-          ),
-        );
-
-        if (result != null && result is Map && result['likes'] != null) {
-          setState(() {
-            _likes = result['likes'] as int;
-            if (result['isLiked'] != null) _isLiked = result['isLiked'] as bool;
-          });
-        }
-      },
-      child: Card(
-        color: FB_CARD,
-        margin: EdgeInsets.all(ScreenUtil().setSp(10)),
-        child: Padding(
-          padding: EdgeInsetsGeometry.all(ScreenUtil().setSp(10)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+          );
+          if (result is Map && result['likes'] != null) {
+            setState(() {
+              _likes = result['likes'] as int;
+              if (result['isLiked'] != null) {
+                _isLiked = result['isLiked'] as bool;
+              }
+            });
+          }
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 8, 10),
+              child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundImage: widget.userImage.startsWith('http')
-                        ? CachedNetworkImageProvider(widget.userImage)
-                        : AssetImage(widget.userImage) as ImageProvider,
-                  ),
-                  SizedBox(width: ScreenUtil().setWidth(10)),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CustomFont(
-                        text: widget.userName,
-                        fontSize: ScreenUtil().setSp(15),
-                        color: FB_DARK_PRIMARY,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          CustomFont(
-                            text: formatDate(widget.date),
-                            fontSize: ScreenUtil().setSp(12),
-                            color: Colors.grey,
-                          ),
-                          SizedBox(width: ScreenUtil().setWidth(3)),
-                          Icon(
-                            Icons.public,
-                            color: Colors.grey,
-                            size: ScreenUtil().setSp(15),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Spacer(),
-                  Icon(Icons.more_horiz),
-                ],
-              ),
-              SizedBox(height: ScreenUtil().setHeight(5)),
-              //post content
-              CustomFont(
-                text: widget.postContent,
-                fontSize: ScreenUtil().setSp(12),
-                color: FB_DARK_PRIMARY,
-              ),
-              SizedBox(height: ScreenUtil().setHeight(5)),
-              buildPostImage(),
-
-              // counts row (hide for ads/market posts)
-              (widget.adsMarket != '')
-                  ? const SizedBox()
-                  : Column(
+                  CircleAvatar(radius: 18, backgroundImage: _avatar()),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: ScreenUtil().setHeight(6)),
+                        Text(
+                          widget.userName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: LOOP_TEXT,
+                          ),
+                        ),
                         Row(
                           children: [
                             Text(
-                              '$_likes likes',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
+                              isAd ? 'Sponsored' : formatDate(widget.date),
+                              style: TextStyle(fontSize: 12, color: LOOP_MUTED),
                             ),
-                            Spacer(),
-                            Text(
-                              '${widget.commentsCount} comments',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                            SizedBox(width: ScreenUtil().setWidth(12)),
-                            Text(
-                              '${widget.sharesCount} shares',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              isAd ? Icons.campaign_outlined : Icons.public,
+                              size: 12,
+                              color: LOOP_MUTED,
                             ),
                           ],
                         ),
-                        SizedBox(height: ScreenUtil().setHeight(5)),
                       ],
                     ),
-              (widget.adsMarket != '')
-                  ? const SizedBox()
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        LikeButton(
-                          onPressed: () {
-                            setState(() {
-                              if (_isLiked) {
-                                _likes = (_likes - 1) < 0 ? 0 : _likes - 1;
-                                _isLiked = false;
-                              } else {
-                                _likes = _likes + 1;
-                                _isLiked = true;
-                              }
-                            });
-                          },
-                          textColor: _isLiked
-                              ? FB_DARK_PRIMARY
-                              : FB_TEXT_COLOR_GREY,
-                        ),
-                        CommentButton(
-                          onPressed: () {
-                            print('Comment Tapped!');
-                          },
-                          textColor: FB_TEXT_COLOR_GREY,
-                        ),
-                        ShareButton(
-                          onPressed: () {
-                            print('Shared Tapped!');
-                          },
-                          textColor: FB_TEXT_COLOR_GREY,
-                        ),
-                      ],
+                  ),
+                  Icon(Icons.more_horiz, color: LOOP_MUTED),
+                ],
+              ),
+            ),
+            if (widget.postContent.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                child: Text(
+                  widget.postContent,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: LOOP_TEXT,
+                  ),
+                ),
+              ),
+            _buildImage(isAd),
+            if (isAd)
+              _buildAdCta()
+            else
+              _buildActions(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImage(bool isAd) {
+    final path = widget.imagePath;
+    if (path == null) {
+      if (!widget.showPlaceholder) return const SizedBox.shrink();
+      return Container(
+        height: 150,
+        color: LOOP_SUBTLE,
+        child: Icon(Icons.image_outlined, color: LOOP_MUTED, size: 36),
+      );
+    }
+    final Widget img = path.startsWith('http')
+        ? Image.network(
+            path,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: isAd ? 160 : null,
+            loadingBuilder: (c, child, p) => p == null
+                ? child
+                : Container(
+                    height: isAd ? 160 : 200,
+                    color: LOOP_SUBTLE,
+                    child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-              (widget.adsMarket != '')
-                  ? const SizedBox()
-                  : Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 14,
-                          backgroundImage: AssetImage(
-                            'assets/images/userprofile.jpg',
-                          ),
-                        ),
-                        SizedBox(width: ScreenUtil().setWidth(10)),
-                        Container(
-                          padding: EdgeInsets.fromLTRB(
-                            ScreenUtil().setSp(10),
-                            0,
-                            0,
-                            0,
-                          ),
-                          alignment: Alignment.centerLeft,
-                          height: ScreenUtil().setHeight(25),
-                          width: ScreenUtil().setWidth(330),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(ScreenUtil().setSp(10)),
-                            ),
-                          ),
-                          child: CustomFont(
-                            text: 'Write a comment...',
-                            fontSize: ScreenUtil().setSp(11),
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-              (widget.adsMarket != '')
-                  ? Container(
-                      padding: EdgeInsets.all(5.sp),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CustomFont(
-                                text: 'MORE DETAILS',
-                                fontSize: 17.sp,
-                                color: FB_TEXT_PRIMARY,
-                              ),
-                              CustomFont(
-                                text: widget.adsMarket,
-                                fontSize: 17.sp,
-                                color: FB_TEXT_PRIMARY,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ],
-                          ),
-                          CustomInkwellButton(
-                            height: 40.h,
-                            width: 90.w,
-                            icon: Icon(
-                              Icons.arrow_forward,
-                              color: Colors.white,
-                            ),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => DetailScreen(
-                                  userName: widget.userName,
-                                  postContent: widget.postContent,
-                                  date: formatDate(widget.date),
-                                  numOfLikes: _likes,
-                                  imageUrl: widget.imagePath ?? '',
-                                  profileImageUrl: widget.userImage,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : const SizedBox(),
-              (widget.adsMarket != '')
-                  ? const SizedBox()
-                  : SizedBox(height: ScreenUtil().setHeight(10)),
-              (widget.adsMarket != '')
-                  ? const SizedBox()
-                  : CustomFont(
-                      text: 'View comments',
-                      fontSize: ScreenUtil().setSp(11),
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
+                  ),
+            errorBuilder: (c, e, s) => Container(
+              height: isAd ? 160 : 180,
+              color: LOOP_SUBTLE,
+              child: Icon(Icons.broken_image_outlined, color: LOOP_MUTED),
+            ),
+          )
+        : Image.asset(
+            path,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: isAd ? 160 : null,
+          );
+    return img;
+  }
+
+  Widget _buildActions() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+            child: Row(
+              children: [
+                Text(
+                  '$_likes likes',
+                  style: TextStyle(fontSize: 12, color: LOOP_MUTED),
+                ),
+                const Spacer(),
+                Text(
+                  '${widget.commentsCount} comments · ${widget.sharesCount} shares',
+                  style: TextStyle(fontSize: 12, color: LOOP_MUTED),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: LOOP_BORDER),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _actionButton(
+                _isLiked ? Icons.favorite : Icons.favorite_border,
+                'Like',
+                _isLiked ? LOOP_DANGER : LOOP_MUTED,
+                () => setState(() {
+                  _isLiked = !_isLiked;
+                  _likes += _isLiked ? 1 : -1;
+                  if (_likes < 0) _likes = 0;
+                }),
+              ),
+              _actionButton(
+                Icons.mode_comment_outlined,
+                'Comment',
+                _showComments ? LOOP_ACCENT : LOOP_MUTED,
+                () => setState(() => _showComments = !_showComments),
+              ),
+              _actionButton(Icons.share_outlined, 'Share', LOOP_MUTED, () {}),
             ],
           ),
+          if (_showComments) _buildCommentsSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentsSection() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Divider(height: 12, color: LOOP_BORDER),
+          if (_comments.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'Be the first to comment.',
+                style: TextStyle(fontSize: 12, color: LOOP_MUTED),
+              ),
+            )
+          else
+            ..._comments.map(
+              (c) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: 13,
+                      backgroundColor: LOOP_SUBTLE,
+                      child: Icon(Icons.person, size: 14, color: LOOP_MUTED),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(9),
+                        decoration: BoxDecoration(
+                          color: LOOP_SUBTLE,
+                          borderRadius: BorderRadius.circular(kRadiusSm),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'You',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: LOOP_TEXT,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              c,
+                              style:
+                                  TextStyle(fontSize: 13, color: LOOP_TEXT),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _commentController,
+                  style: TextStyle(fontSize: 13, color: LOOP_TEXT),
+                  minLines: 1,
+                  maxLines: 3,
+                  onSubmitted: (_) => _addComment(),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    hintText: 'Write a comment…',
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton.filled(
+                style: IconButton.styleFrom(backgroundColor: LOOP_TEAL),
+                onPressed: _addComment,
+                icon: const Icon(Icons.arrow_upward, size: 18),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionButton(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return TextButton.icon(
+      onPressed: onTap,
+      style: TextButton.styleFrom(foregroundColor: color),
+      icon: Icon(icon, size: 18, color: color),
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
         ),
+      ),
+    );
+  }
+
+  Widget _buildAdCta() {
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'LEARN MORE',
+                  style: TextStyle(
+                    fontSize: 11,
+                    letterSpacing: 1,
+                    color: LOOP_MUTED,
+                  ),
+                ),
+                Text(
+                  widget.adsMarket,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: LOOP_TEXT,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          FilledButton(
+            onPressed: () {},
+            style: FilledButton.styleFrom(
+              backgroundColor: LOOP_TEAL,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(kRadiusSm),
+              ),
+            ),
+            child: const Icon(Icons.arrow_forward, size: 18),
+          ),
+        ],
       ),
     );
   }

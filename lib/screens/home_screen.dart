@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter/services.dart';
 import 'package:tuazon_mobprog/constants.dart';
 import 'package:tuazon_mobprog/screens/newsfeed_screen.dart';
 import 'package:tuazon_mobprog/screens/notification_screen.dart';
-import 'package:tuazon_mobprog/widgets/custom_font.dart';
 import 'package:tuazon_mobprog/screens/profile_screen.dart';
-import 'package:tuazon_mobprog/services/user_database.dart';
+import 'package:tuazon_mobprog/services/user_service.dart';
+import 'package:tuazon_mobprog/widgets/loop_brand.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,8 +17,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
-  final UserDatabase _userDatabase = UserDatabase();
-  String _userName = 'Jamaine Tuazon'; // Default name
+  final UserService _userService = UserService();
+  String _userName = 'Profile';
+  String _userImage = '';
 
   @override
   void initState() {
@@ -28,92 +29,138 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadUserData() async {
     try {
-      // Get the logged-in username from database file
-      final username = await _userDatabase.getCurrentUser();
-
-      if (username != null && username.isNotEmpty) {
-        // Fetch user data from database
-        final user = await _userDatabase.findUserByUsername(username);
-
-        if (user != null && mounted) {
-          final firstName = user['firstName']?.toString() ?? '';
-          final lastName = user['lastName']?.toString() ?? '';
-          final fullName = '$firstName $lastName'.trim();
-
-          if (fullName.isNotEmpty && mounted) {
-            setState(() {
-              _userName = fullName;
-            });
-          }
-        }
+      final user = await _userService.getSavedUser();
+      if (user != null && mounted) {
+        setState(() {
+          if (user.fullName.isNotEmpty) _userName = user.fullName;
+          _userImage = user.image;
+        });
       }
-    } catch (e) {
-      // If error occurs, keep default name
-    }
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<String> titles = ['Chatterly', 'Notifications', _userName];
+    final titles = [kAppName, 'Activity', _userName];
 
+    return PopScope(
+      canPop: _selectedIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          // From another tab, back returns to the Home tab instead of exiting
+          // or falling back to the auth screens.
+          setState(() => _selectedIndex = 0);
+          _pageController.jumpToPage(0);
+        }
+      },
+      child: _buildScaffold(titles),
+    );
+  }
+
+  Widget _buildScaffold(List<String> titles) {
     return Scaffold(
-      backgroundColor: FB_SURFACE,
+      backgroundColor: LOOP_BG,
       appBar: AppBar(
-        backgroundColor: FB_LIGHT_PRIMARY,
-        shadowColor: FB_TEXT_COLOR_WHITE,
-        elevation: 2,
-        title: CustomFont(
-          text: titles[_selectedIndex],
-          fontSize: ScreenUtil().setSp(25),
-          color: FB_TEXT_COLOR_WHITE,
-          fontFamily: 'Klavika',
-        ),
+        titleSpacing: 20,
+        backgroundColor: LOOP_TEAL,
+        foregroundColor: LOOP_ON_BRAND,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+        iconTheme: const IconThemeData(color: LOOP_ON_BRAND),
+        title: _selectedIndex == 0
+            ? const LoopLogo(size: 26, color: LOOP_ON_BRAND)
+            : Text(
+                titles[_selectedIndex],
+                style: const TextStyle(color: LOOP_ON_BRAND),
+              ),
         actions: [
-          // Opens the state management demo (ephemeral counter + app-state theme).
           IconButton(
-            icon: const Icon(Icons.tune, color: FB_TEXT_COLOR_WHITE),
-            tooltip: 'State Demo',
-            onPressed: () => Navigator.pushNamed(context, '/state-demo'),
+            icon: const Icon(Icons.settings_outlined, color: LOOP_ON_BRAND),
+            tooltip: 'Settings',
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: PageView(
         controller: _pageController,
-        children: const <Widget>[
+        children: const [
           NewsfeedScreen(),
           NotificationScreen(),
           ProfileScreen(),
         ],
-        onPageChanged: (page) {
-          setState(() {
-            _selectedIndex = page;
-          });
-        },
+        onPageChanged: (page) => setState(() => _selectedIndex = page),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: FB_LIGHT_PRIMARY,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        onTap: _onTappedBar,
-
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: LOOP_SURFACE,
+          border: Border(top: BorderSide(color: LOOP_BORDER)),
+        ),
+        child: NavigationBarTheme(
+          data: NavigationBarThemeData(
+            backgroundColor: Colors.transparent,
+            indicatorColor: LOOP_ACCENT.withValues(alpha: 0.14),
+            labelTextStyle: WidgetStatePropertyAll(
+              TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: LOOP_MUTED),
+            ),
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-        selectedItemColor: FB_TEXT_COLOR_WHITE,
-        currentIndex: _selectedIndex,
+          child: NavigationBar(
+            height: 64,
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: (i) {
+              setState(() => _selectedIndex = i);
+              _pageController.jumpToPage(i);
+            },
+            destinations: [
+              const NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home_rounded),
+                label: 'Home',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.notifications_none_rounded),
+                selectedIcon: Icon(Icons.notifications_rounded),
+                label: 'Activity',
+              ),
+              NavigationDestination(
+                icon: _avatarIcon(false),
+                selectedIcon: _avatarIcon(true),
+                label: 'Profile',
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  void _onTappedBar(int value) {
-    setState(() {
-      _selectedIndex = value;
-    });
-    _pageController.jumpToPage(value);
+  Widget _avatarIcon(bool selected) {
+    return Container(
+      padding: const EdgeInsets.all(1.5),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected ? LOOP_ACCENT : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: CircleAvatar(
+        radius: 12,
+        backgroundColor: LOOP_SUBTLE,
+        backgroundImage:
+            _userImage.startsWith('http') ? NetworkImage(_userImage) : null,
+        child: _userImage.startsWith('http')
+            ? null
+            : Icon(Icons.person, size: 14, color: LOOP_MUTED),
+      ),
+    );
   }
 }

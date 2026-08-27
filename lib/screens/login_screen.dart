@@ -1,10 +1,7 @@
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../widgets/custom_textformfield.dart';
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import '../widgets/custom_inkwell_button.dart';
-import '../widgets/custom_dialogs.dart';
-import '../services/user_database.dart';
+import '../services/user_service.dart';
+import '../widgets/loop_brand.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,31 +11,24 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  TextEditingController usernameController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final UserDatabase _userDatabase = UserDatabase();
-  String? _errorMessage;
+  final UserService _userService = UserService();
+
   bool _obscurePassword = true;
+  bool _loading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    // Clear error message when user types
-    usernameController.addListener(() {
-      if (_errorMessage != null) {
-        setState(() {
-          _errorMessage = null;
-        });
-      }
-    });
-    passwordController.addListener(() {
-      if (_errorMessage != null) {
-        setState(() {
-          _errorMessage = null;
-        });
-      }
-    });
+    usernameController.addListener(_clearError);
+    passwordController.addListener(_clearError);
+  }
+
+  void _clearError() {
+    if (_errorMessage != null) setState(() => _errorMessage = null);
   }
 
   @override
@@ -48,260 +38,201 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Validate username
   String? _validateUsername(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      customDialog(
-        context,
-        title: 'Invalid Username',
-        content: 'Please enter your username.',
-      );
-      return 'Username is required';
-    }
-    final username = value.trim();
-    if (username.length < 3) {
-      customDialog(
-        context,
-        title: 'Invalid Username',
-        content: 'Username must be at least 3 characters long.',
-      );
-      return 'Username must be at least 3 characters';
-    }
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'Username is required';
+    if (v.length < 3) return 'Username must be at least 3 characters';
     return null;
   }
 
-  // Validate password
   String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      customDialog(
-        context,
-        title: 'Invalid Password',
-        content: 'Please enter your password.',
-      );
-      return 'Password is required';
-    }
-    if (value.length < 6) {
-      customDialog(
-        context,
-        title: 'Invalid Password',
-        content: 'Password must be at least 6 characters long.',
-      );
-      return 'Password must be at least 6 characters';
-    }
+    if (value == null || value.isEmpty) return 'Password is required';
+    if (value.length < 6) return 'Password must be at least 6 characters';
     return null;
   }
 
-  Future<void> login() async {
-    // Clear previous error message
-    setState(() {
-      _errorMessage = null;
-    });
+  Future<void> _login() async {
+    setState(() => _errorMessage = null);
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    // Validate username
-    final usernameError = _validateUsername(usernameController.text);
-    if (usernameError != null) return;
-
-    // Validate password
-    final passwordError = _validatePassword(passwordController.text);
-    if (passwordError != null) return;
-
+    setState(() => _loading = true);
     try {
-      final username = usernameController.text.trim();
-      final password = passwordController.text;
-
-      // Validate credentials from database
-      final isValid = await _userDatabase.validateCredentials(
-        username: username,
-        password: password,
+      // Authenticate against https://dummyjson.com/auth/login. On success the
+      // UserService persists the user + token with shared_preferences.
+      await _userService.login(
+        username: usernameController.text.trim(),
+        password: passwordController.text,
       );
-
       if (!mounted) return;
-
-      if (isValid) {
-        // Store the logged-in username in database file
-        await _userDatabase.setCurrentUser(username);
-
-        // Credentials are correct, navigate to home screen (which contains newsfeed)
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        // Show error dialog for invalid credentials
-        customDialog(
-          context,
-          title: 'Login Failed',
-          content:
-              'Invalid username or password. Please check your credentials and try again.',
-        );
-      }
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     } catch (e) {
-      // Handle any errors during validation
-      if (mounted) {
-        customDialog(
-          context,
-          title: 'Login Error',
-          content: 'An error occurred while logging in: ${e.toString()}',
-        );
-      }
+      if (!mounted) return;
+      setState(() {
+        _errorMessage =
+            e.toString().replaceFirst('Exception: ', '').trim();
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: FB_SURFACE,
-      body: SingleChildScrollView(
-        child: SizedBox(
-          height: ScreenUtil().screenHeight,
-          width: ScreenUtil().screenWidth,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  width: ScreenUtil().screenWidth,
-                  height: ScreenUtil().setHeight(40),
-                  color: FB_LIGHT_PRIMARY,
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: ScreenUtil().setWidth(25),
-                  ),
-                  child: Column(
-                    children: [
-                      Image.asset(
-                        'assets/images/chatbubble.png',
-                        height: ScreenUtil().setHeight(200),
+      backgroundColor: LOOP_BG,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const LoopLogo(size: 44),
+                    const SizedBox(height: 40),
+                    Text(
+                      'Welcome back',
+                      style: TextStyle(
+                        fontFamily: 'Klavika',
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.8,
+                        color: LOOP_TEXT,
                       ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Login',
-                          style: TextStyle(
-                            color: FB_DARK_PRIMARY,
-                            fontSize: ScreenUtil().setSp(28),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Sign in to continue to $kAppName',
+                      style: TextStyle(color: LOOP_MUTED, fontSize: 14),
+                    ),
+                    const SizedBox(height: 32),
+                    _label('Username'),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: usernameController,
+                      validator: _validateUsername,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        hintText: 'Enter your username',
+                        prefixIcon: Icon(Icons.alternate_email, size: 20),
                       ),
-                      SizedBox(height: ScreenUtil().setHeight(10)),
-                      CustomTextFormField(
-                        height: ScreenUtil().setHeight(10),
-                        width: ScreenUtil().setWidth(10),
-                        controller: usernameController,
-                        validator: (value) =>
-                            value!.isEmpty ? 'Enter your username' : null,
-                        onSaved: (value) =>
-                            usernameController.text = value ?? '',
-                        fontSize: ScreenUtil().setSp(15),
-                        fontColor: FB_TEXT_COLOR_DARKGREY,
-                        hintTextSize: ScreenUtil().setSp(15),
-                        hintText: 'Username',
-                      ),
-                      SizedBox(height: ScreenUtil().setHeight(10)),
-                      CustomTextFormField(
-                        height: ScreenUtil().setHeight(10),
-                        width: ScreenUtil().setWidth(10),
-                        controller: passwordController,
-                        isObscure: _obscurePassword,
-                        validator: (value) =>
-                            value!.isEmpty ? 'Enter your password' : null,
-                        onSaved: (value) =>
-                            passwordController.text = value ?? '',
-                        fontSize: ScreenUtil().setSp(15),
-                        fontColor: FB_TEXT_COLOR_DARKGREY,
-                        hintTextSize: ScreenUtil().setSp(15),
-                        hintText: 'Password',
+                    ),
+                    const SizedBox(height: 18),
+                    _label('Password'),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: passwordController,
+                      validator: _validatePassword,
+                      obscureText: _obscurePassword,
+                      onFieldSubmitted: (_) => _login(),
+                      decoration: InputDecoration(
+                        hintText: 'Enter your password',
+                        prefixIcon: const Icon(Icons.lock_outline, size: 20),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
                                 ? Icons.visibility_outlined
                                 : Icons.visibility_off_outlined,
-                            color: FB_PRIMARY,
+                            size: 20,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                      ),
-                      if (_errorMessage != null) ...[
-                        SizedBox(height: ScreenUtil().setHeight(15)),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: ScreenUtil().setWidth(15),
-                            vertical: ScreenUtil().setHeight(10),
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade300),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                color: Colors.red,
-                                size: ScreenUtil().setSp(20),
-                              ),
-                              SizedBox(width: ScreenUtil().setWidth(10)),
-                              Expanded(
-                                child: Text(
-                                  _errorMessage!,
-                                  style: TextStyle(
-                                    color: Colors.red.shade700,
-                                    fontSize: ScreenUtil().setSp(14),
-                                  ),
-                                ),
-                              ),
-                            ],
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
                           ),
                         ),
-                      ],
-                      SizedBox(height: ScreenUtil().setHeight(50)),
-                      CustomInkwellButton(
-                        onTap: () async => await login(),
-                        height: ScreenUtil().setHeight(40),
-                        width: ScreenUtil().screenWidth,
-                        buttonName: 'Login',
-                        fontSize: ScreenUtil().setSp(15),
                       ),
+                    ),
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: 16),
+                      _errorBanner(_errorMessage!),
                     ],
-                  ),
-                ),
-                Container(
-                  width: ScreenUtil().screenWidth,
-                  height: ScreenUtil().setHeight(40),
-                  color: FB_LIGHT_PRIMARY,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'You do not have an account? ',
+                    const SizedBox(height: 28),
+                    ElevatedButton(
+                      onPressed: _loading ? null : _login,
+                      child: _loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.4,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Sign In'),
+                    ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            "Don't have an account? ",
+                            style: TextStyle(color: LOOP_MUTED, fontSize: 14),
+                          ),
+                          GestureDetector(
+                            onTap: () =>
+                                Navigator.pushNamed(context, '/register'),
+                            child: Text(
+                              'Create one',
+                              style: TextStyle(
+                                color: LOOP_ACCENT,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: Text(
+                        'Demo: emilys / emilyspass',
                         style: TextStyle(
-                          color: Colors.grey.shade200,
-                          fontSize: ScreenUtil().setSp(15),
+                          color: LOOP_MUTED.withValues(alpha: 0.7),
+                          fontSize: 12,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () => Navigator.pushNamed(context, '/register'),
-                        child: Text(
-                          'Register here',
-                          style: TextStyle(
-                            color: FB_DARK_PRIMARY,
-                            fontSize: ScreenUtil().setSp(15),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
+  Widget _label(String text) => Text(
+    text,
+    style: TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: LOOP_TEXT,
+    ),
+  );
+
+  Widget _errorBanner(String message) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: LOOP_DANGER.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(kRadiusSm),
+      border: Border.all(color: LOOP_DANGER.withValues(alpha: 0.3)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.error_outline, color: LOOP_DANGER, size: 18),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            message,
+            style: const TextStyle(color: LOOP_DANGER, fontSize: 13),
+          ),
+        ),
+      ],
+    ),
+  );
 }
