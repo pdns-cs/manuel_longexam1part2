@@ -170,7 +170,7 @@ class LoopApp extends StatelessWidget {
             '/': (context) => const SplashScreen(),
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
-            '/newsfeed': (context) => const NewsfeedScreen(),
+            '/newsfeed': (context) => NewsfeedScreen(),
             '/home': (context) => const HomeScreen(),
             '/notification': (context) => const NotificationScreen(),
             '/settings': (context) => const SettingsScreen(),

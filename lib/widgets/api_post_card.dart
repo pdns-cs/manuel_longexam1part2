@@ -45,6 +45,8 @@ class _ApiPostCardState extends State<ApiPostCard> {
   void initState() {
     super.initState();
     _likes = widget.post.likes;
+    _showComments = true;
+    _loadComments();
   }
 
   @override

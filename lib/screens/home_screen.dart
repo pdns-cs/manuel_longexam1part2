@@ -92,10 +92,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: PageView(
         controller: _pageController,
-        children: const [
+        children: [
           NewsfeedScreen(),
-          NotificationScreen(),
-          ProfileScreen(),
+          const NotificationScreen(),
+          const ProfileScreen(),
         ],
         onPageChanged: (page) => setState(() => _selectedIndex = page),
       ),

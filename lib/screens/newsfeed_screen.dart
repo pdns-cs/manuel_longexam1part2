@@ -1,80 +1,52 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:manuel_advmobprog/models/post.dart';
+import 'package:manuel_advmobprog/services/post_service.dart';
+import 'package:manuel_advmobprog/widgets/api_post_card.dart';
 import 'package:manuel_advmobprog/widgets/post_card.dart';
 import '../constants.dart';
 
 class NewsfeedScreen extends StatelessWidget {
-  const NewsfeedScreen({super.key});
+  NewsfeedScreen({super.key});
+
+  final PostService _postService = PostService();
 
   @override
   Widget build(BuildContext context) {
-    //UI
-    return ListView(
-      children: [
-        PostCard(
-          userName: 'Rene Barrios',
-          postContent: 'LF: Graham Balls',
-          likesCount: "321",
-          commentsCount: 0,
-          sharesCount: 3,
-          date: DateTime.now().subtract(Duration(days: 1)),
-          userImage: kGenericAvatar,
-        ),
-        buildAdvertisementCarousel(),
-        PostCard(
-          userName: 'Walang Pasok',
-          postContent: 'Walang Pasok [August 18, 2026]',
-          likesCount: "124",
-          commentsCount: 0,
-          sharesCount: 15,
-          imagePath:
-              'https://play-lh.googleusercontent.com/XxN2uh1U2LhLEvJisEVeJYsCtdAyyzJP8lA-fHCqqbZSBqNUJCa1DcisSSmFmQahKGFtVhXTghCLsOktq8mmZg',
-          date: DateTime.now().subtract(Duration(minutes: 13)),
-          userImage: kGenericAvatar,
-        ),
-        buildAdvertisementCarousel(),
-        PostCard(
-          userName: 'Vhan Hajj',
-          postContent:
-              'Wag na tayo mag lokohan dito alam naman kung sino ang paid internet troll. Kahit ilan beses at paulit ulit nyo sabihin na "ayan na parating na sila" ay walang dadating kasi konting mga filiipino lang ang nag kaka interest dito. Sa inyo na ang sub na to kasi dito nyo lang kaya mag dominate, downvote lang e limited na sa 10mins per comment ng kalaban tapos konti pa sila dito, madali lang diba. Sa ginagawa nyo pinapalabas nyo lang na bayaran kayo at mga tunay na mamamayan filipino lang kami. If you trully fight for democracy then show it here.',
-          likesCount: "412",
-          commentsCount: 0,
-          sharesCount: 6,
-          date: DateTime.now().subtract(Duration(hours: 2)),
-          userImage: kGenericAvatar,
-        ),
-        PostCard(
-          userName: 'Ronald Rafael',
-          postContent:
-              'yeoboseyo ?? I mean hello >.< *chuckles lightly* oh arasso, i mean okay ah .... ne, i mean yes. jinjjayo i mean really ... eheh ..mianhaeyo !!! IM SORRY *frustated sigh* aish ottoke i mean what do we do ?? arasso, i mean okay :3 see you annyeong, i mean bye',
-          likesCount: "1.2K",
-          commentsCount: 0,
-          sharesCount: 41,
-          date: DateTime.now().subtract(Duration(hours: 4)),
-          userImage: kGenericAvatar,
-        ),
-        PostCard(
-          userName: 'Jamaine Grace',
-          postContent:
-              'hi idol!! Walang signal dito sa bukid pero nung nalaman kong nag post ka dali dali akong bumaba ng bukid, tumawid ako ng tatlong ilog, tinumbok ko ang pitong bundok, at umutang ako ng perang pamasahe papuntang syudad at namalimos pa ako para may pang hulog sa pisonet para lang maka heart react sa post mo. Sana manotice moko idol.',
-          likesCount: "3.4K",
-          commentsCount: 0,
-          sharesCount: 156,
-          date: DateTime.now().subtract(Duration(hours: 6)),
-          userImage: kGenericAvatar,
-        ),
-        PostCard(
-          userName: 'Princess Glyza',
-          postContent:
-              'hawak mo ang beat, hawak mo ang beat, hawak mo ang beat, hawak mo ang beat, dubai chewy cookie, ano tara? ilocos empanada, ano tara? scramble ng tomboy, ano tara? isang araw nag mamaneho ako sa laguna, beep beep beep beep beep beep, dubi dubi dap dap dubi dubi dap dap di dip didip didap, Maglaro tayo, Maglaro? gayahin mo ako',
-          likesCount: "769",
-          commentsCount: 0,
-          sharesCount: 12,
-          date: DateTime.now().subtract(Duration(hours: 9)),
-          userImage: kGenericAvatar,
-        ),
-      ],
+    return FutureBuilder<List<Post>>(
+      future: _postService.getPosts(limit: 20),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Could not load posts.',
+              style: TextStyle(color: LOOP_TEXT),
+            ),
+          );
+        }
+
+        final posts = snapshot.data ?? [];
+
+        return ListView(
+          children: [
+            buildAdvertisementCarousel(),
+            const SizedBox(height: 8),
+            ...posts.map(
+              (post) => ApiPostCard(
+                post: post,
+                authorName: 'User ${post.userId}',
+                authorImage: kGenericAvatar,
+                currentUserId: post.userId,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
