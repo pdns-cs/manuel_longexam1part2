@@ -45,6 +45,14 @@ class LoopApp extends StatelessWidget {
     );
 
     return base.copyWith(
+      textTheme: base.textTheme.apply(
+        fontFamilyFallback: const [
+          'Apple Color Emoji',
+          'Segoe UI Emoji',
+          'Noto Color Emoji',
+          'Emoji',
+        ],
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: base.scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,

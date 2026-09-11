@@ -162,6 +162,8 @@ class _PostCardState extends State<PostCard> {
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
                 child: Text(
                   widget.postContent,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.4,
@@ -386,30 +388,39 @@ class _PostCardState extends State<PostCard> {
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'LEARN MORE',
-                  style: TextStyle(
-                    fontSize: 11,
-                    letterSpacing: 1,
-                    color: LOOP_MUTED,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'LEARN MORE',
+                    style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: 1,
+                      color: LOOP_MUTED,
+                    ),
                   ),
-                ),
-                Text(
-                  widget.adsMarket,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: LOOP_TEXT,
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.adsMarket,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: LOOP_TEXT,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
+          const SizedBox(width: 10),
           FilledButton(
             onPressed: () {},
             style: FilledButton.styleFrom(

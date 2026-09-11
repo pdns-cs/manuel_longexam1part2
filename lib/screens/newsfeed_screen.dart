@@ -37,7 +37,7 @@ class NewsfeedScreen extends StatelessWidget {
         PostCard(
           userName: 'Vhan Hajj',
           postContent:
-              '2️⃣+2️⃣=4️⃣ DEPENDENDE 😭🙏 SA 💀 ROAD 🛣️ MARKINGS 🚦 MERON 😭 DYAN 👈 ARROWS ⬅️➡️ SA 💀 ROAD 🛣️ MARKINGS 🚦 NOT ❌ ALL 💯 THE 🗣️ TIME ⏰ KALIWA ⬅️ IS 😭 KALIWA ⬅️ AND 💀 KANAN ➡️ IS 😭 KANAN ➡️, ANO ❓ MAY 🗣️ KALIWA ⬅️ BA 🤨 SA 💀 KANAN ➡️? MAY 😭 KALIWA ⬅️ BA 🤨 SA 💀 RIGHT ➡️? BOSS 🗣️ NILILITO 🤯 MO 👉 UNG 😭 MGA 💀 ATHLETES 🏃‍♂️ KO 💯! YUNG 😭 MGA 💀 ISTUDENTS 📚 KO 💯 TSAKA 😭, IDRINAWING ✍️ KO 💯 NA 😭 NGA 💀 EH 🗣️ DRINAWING ✍️ KO 💯 NA 😭 KUNG 🤨 ANO ❓ NAKALAGAY 📄 YUN 😭 LANG 💀 SASAGUTIN 📝! AND 😭 DEPENDE 🤯 PA 💀 SA 🚦 ROAD 🛣️ MARKINGS 🚦 DRINAWING ✍️ KO 💯 NA 😭 UNG 💀 SITWASYON 🗺️! PARA 😭 MONG 🗣️ SINABI 💬 "2️⃣+2️⃣=4️⃣ 🤓 HMM 🤔 DEPENDE 😭 KUNG 🤨 3️⃣ YAN 💀 KASI 😭 PAG 🤨 3️⃣ EDI 🗣️ FIVE ✋" SYEMPRE 😭🙏💀‼️🔥🗣️🤯🚨💯',
+              'Wag na tayo mag lokohan dito alam naman kung sino ang paid internet troll. Kahit ilan beses at paulit ulit nyo sabihin na "ayan na parating na sila" ay walang dadating kasi konting mga filiipino lang ang nag kaka interest dito. Sa inyo na ang sub na to kasi dito nyo lang kaya mag dominate, downvote lang e limited na sa 10mins per comment ng kalaban tapos konti pa sila dito, madali lang diba. Sa ginagawa nyo pinapalabas nyo lang na bayaran kayo at mga tunay na mamamayan filipino lang kami. If you trully fight for democracy then show it here.',
           likesCount: "412",
           commentsCount: 0,
           sharesCount: 6,
@@ -47,7 +47,7 @@ class NewsfeedScreen extends StatelessWidget {
         PostCard(
           userName: 'Ronald Rafael',
           postContent:
-              'Last night 🌚⭐️ I 🙋had a dream 😴💭: Mayor Rody 🌚👃🏻 was granted 🙏🏻house 🏠 arrest 🚔. We 👽💃 had a tearful 😢😢😢reunion 👨‍❤️‍👨🤗. We hugged 👨‍❤️‍💋‍👨🫂each other & he whispered 🗣️🤫 to me;👰🏽‍♂️ "Ronald, I\'m 👃🏻👰🏽‍♂️ okey now." 💕🥰💖. Lord 🙏🏻🤲, pls 🛐 make my dream 💤💭come true.📿🧎‍➡️',
+              'yeoboseyo ?? I mean hello >.< *chuckles lightly* oh arasso, i mean okay ah .... ne, i mean yes. jinjjayo i mean really ... eheh ..mianhaeyo !!! IM SORRY *frustated sigh* aish ottoke i mean what do we do ?? arasso, i mean okay :3 see you annyeong, i mean bye',
           likesCount: "1.2K",
           commentsCount: 0,
           sharesCount: 41,
@@ -164,7 +164,7 @@ class NewsfeedScreen extends StatelessWidget {
         CarouselSlider(
           options: CarouselOptions(
             enableInfiniteScroll: false,
-            height: 308.h,
+            height: 340.h,
             padEnds: false,
           ),
           items: carouselItems(),
